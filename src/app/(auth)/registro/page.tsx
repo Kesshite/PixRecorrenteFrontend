@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, FormEvent } from "react";
+import { useState, useEffect, FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Eye, EyeOff, Loader2 } from "lucide-react";
@@ -9,7 +9,7 @@ import { ApiError, NetworkError } from "@/lib/api/client";
 
 export default function RegistroPage() {
   const router = useRouter();
-  const { registro } = useAuth();
+  const { registro, isAuthenticated } = useAuth();
 
   const [nomeEstabelecimento, setNomeEstabelecimento] = useState("");
   const [email, setEmail] = useState("");
@@ -19,6 +19,13 @@ export default function RegistroPage() {
   const [showConfirmar, setShowConfirmar] = useState(false);
   const [loading, setLoading] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
+
+  // Redirecionar quando autenticado (cobre race condition do setState + router.push)
+  useEffect(() => {
+    if (isAuthenticated) {
+      router.replace("/dashboard");
+    }
+  }, [isAuthenticated, router]);
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
@@ -37,7 +44,6 @@ export default function RegistroPage() {
     setLoading(true);
     try {
       await registro({ email, senha, nomeEstabelecimento });
-      router.push("/dashboard");
     } catch (err) {
       if (err instanceof NetworkError) {
         setErro(err.message);

@@ -13,11 +13,12 @@ import {
   login as apiLogin,
   registro as apiRegistro,
   logout as apiLogout,
+  refresh as apiRefresh,
   type LoginBody,
   type RegistroBody,
   type AuthResponse,
 } from "@/lib/api/auth";
-import { setTokenHandlers } from "@/lib/api/client";
+import { ApiError, setTokenHandlers } from "@/lib/api/client";
 
 interface AuthUser {
   nome: string;
@@ -60,23 +61,51 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const stateRef = useRef(state);
   stateRef.current = state;
 
-  // Hidratar do localStorage no mount
+  // Hidratar do localStorage no mount e validar tokens via refresh
   useEffect(() => {
-    try {
-      const raw = localStorage.getItem(STORAGE_KEY);
-      if (raw) {
+    async function hydrate() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (!raw) return;
+
         const stored: StoredAuth = JSON.parse(raw);
+        // Definir estado otimisticamente para evitar flash
         setState({
           user: stored.user,
           token: stored.token,
           refreshToken: stored.refreshToken,
           isAuthenticated: true,
         });
+
+        // Validar tokens: se o refresh falhar, a sessão é inválida
+        try {
+          const newTokens = await apiRefresh(stored.refreshToken);
+          const user: AuthUser = {
+            nome: newTokens.estabelecimento.nome,
+            email: newTokens.estabelecimento.email,
+            estabelecimentoId: newTokens.estabelecimento.id,
+          };
+          persist({ user, token: newTokens.accessToken, refreshToken: newTokens.refreshToken });
+          setState({
+            user,
+            token: newTokens.accessToken,
+            refreshToken: newTokens.refreshToken,
+            isAuthenticated: true,
+          });
+        } catch (err) {
+          if (err instanceof ApiError) {
+            // Refresh token inválido ou expirado — limpar sessão
+            clear();
+            setState({ user: null, token: null, refreshToken: null, isAuthenticated: false });
+          }
+          // NetworkError: manter estado atual, o interceptor 401 cuidará depois
+        }
+      } catch {
+        // localStorage corrompido — limpar
+        localStorage.removeItem(STORAGE_KEY);
       }
-    } catch {
-      // localStorage corrompido — limpar
-      localStorage.removeItem(STORAGE_KEY);
     }
+    hydrate();
   }, []);
 
   // Registrar handlers no client HTTP para injeção de token e auto-refresh (Sub-task 6b)

@@ -86,6 +86,30 @@ export async function registro(body: RegistroBody): Promise<AuthResponse> {
 }
 
 /**
+ * POST /api/auth/refresh
+ * Troca um refresh token por novos tokens. Lança ApiError se inválido/expirado.
+ */
+export async function refresh(refreshToken: string): Promise<AuthResponse> {
+  let res: Response;
+  try {
+    res = await fetch(`${BASE_URL}/auth/refresh`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ refreshToken }),
+    });
+  } catch {
+    throw new NetworkError();
+  }
+
+  if (!res.ok) {
+    const mensagem = await extractErrorMessage(res);
+    throw new ApiError(mensagem, res.status);
+  }
+
+  return res.json() as Promise<AuthResponse>;
+}
+
+/**
  * POST /api/auth/logout
  * Invalida o refresh token (melhor esforço — falha silenciosamente).
  */
