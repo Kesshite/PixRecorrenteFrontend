@@ -52,3 +52,44 @@ export interface SignupFormData {
   estabelecimento: string;
   segmento: "" | "academia" | "estudio" | "escola" | "outro";
 }
+
+// ---------- Membros ----------
+
+export type StatusMembro = "Ativo" | "Pausado" | "Cancelado" | "Inadimplente";
+
+export interface Membro {
+  id: string;
+  estabelecimentoId: string;
+  nome: string;
+  cpf: string | null;
+  telefone: string | null;
+  email: string | null;
+  nomePlano: string | null;
+  valorMensal: number;
+  diaVencimento: number;
+  status: StatusMembro;
+  tags: string | null;
+  criadoEm: string;
+  atualizadoEm: string;
+}
+
+export interface ListagemPaginadaDTO<T> {
+  items: T[];
+  total: number;
+  pagina: number;
+  porPagina: number;
+  totalPaginas: number;
+}
+
+export interface CriarMembroBody {
+  nome: string;
+  cpf?: string | null;
+  telefone?: string | null;
+  email?: string | null;
+  nomePlano?: string | null;
+  valorMensal: number;
+  diaVencimento: number;
+  tags?: string | null;
+}
+
+export type AtualizarMembroBody = CriarMembroBody;
