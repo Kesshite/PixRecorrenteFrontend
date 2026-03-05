@@ -6,6 +6,7 @@ import {
   useState,
   useEffect,
   useCallback,
+  useRef,
   ReactNode,
 } from "react";
 import {
@@ -14,7 +15,9 @@ import {
   logout as apiLogout,
   type LoginBody,
   type RegistroBody,
+  type AuthResponse,
 } from "@/lib/api/auth";
+import { setTokenHandlers } from "@/lib/api/client";
 
 interface AuthUser {
   nome: string;
@@ -53,6 +56,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     isAuthenticated: false,
   });
 
+  // Ref para leitura síncrona dos tokens pelos handlers do client
+  const stateRef = useRef(state);
+  stateRef.current = state;
+
   // Hidratar do localStorage no mount
   useEffect(() => {
     try {
@@ -71,6 +78,34 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       localStorage.removeItem(STORAGE_KEY);
     }
   }, []);
+
+  // Registrar handlers no client HTTP para injeção de token e auto-refresh (Sub-task 6b)
+  useEffect(() => {
+    setTokenHandlers({
+      getAccessToken: () => stateRef.current.token,
+      getRefreshToken: () => stateRef.current.refreshToken,
+      onNewTokens: (res: AuthResponse) => {
+        const user: AuthUser = {
+          nome: res.estabelecimento.nome,
+          email: res.estabelecimento.email,
+          estabelecimentoId: res.estabelecimento.id,
+        };
+        persist({ user, token: res.accessToken, refreshToken: res.refreshToken });
+        setState({
+          user,
+          token: res.accessToken,
+          refreshToken: res.refreshToken,
+          isAuthenticated: true,
+        });
+      },
+      onAuthExpired: () => {
+        // Token expirado e refresh falhou — limpar sessão
+        // O DashboardLayout detecta !isAuthenticated e redireciona para /login
+        clear();
+        setState({ user: null, token: null, refreshToken: null, isAuthenticated: false });
+      },
+    });
+  }, []); // handlers são estáveis (leem via ref)
 
   const persist = (data: StoredAuth) => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
@@ -113,14 +148,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const logout = useCallback(async () => {
-    if (state.refreshToken) {
-      await apiLogout(state.refreshToken).catch(() => {
+    if (stateRef.current.refreshToken) {
+      await apiLogout(stateRef.current.refreshToken).catch(() => {
         // falha silenciosa — limpar local de qualquer forma
       });
     }
     clear();
     setState({ user: null, token: null, refreshToken: null, isAuthenticated: false });
-  }, [state.refreshToken]);
+  }, []);
 
   return (
     <AuthContext.Provider value={{ ...state, login, registro, logout }}>

@@ -1,4 +1,6 @@
-// TODO: integrar com API real — Base URL: http://localhost:5000/api
+import { ApiError, NetworkError } from "./client";
+
+const BASE_URL = "http://localhost:5000/api";
 
 export interface AuthResponse {
   accessToken: string;
@@ -23,61 +25,78 @@ export interface RegistroBody {
   documento?: string;
 }
 
-export interface ApiError {
-  erros: { codigoHttp: number; mensagem: string }[];
-}
-
-function delay(ms: number) {
-  return new Promise((resolve) => setTimeout(resolve, ms));
+async function extractErrorMessage(res: Response): Promise<string> {
+  try {
+    const json = await res.json();
+    if (Array.isArray(json.erros) && json.erros.length > 0) {
+      return json.erros[0].mensagem as string;
+    }
+  } catch {
+    // corpo não é JSON
+  }
+  return `Erro ${res.status}`;
 }
 
 /**
  * POST /api/auth/login
- * Mock: simula autenticação com delay de 500ms.
- * TODO: integrar com API real
+ * Autentica com email e senha. Retorna access token + refresh token.
  */
 export async function login(body: LoginBody): Promise<AuthResponse> {
-  await delay(500);
+  let res: Response;
+  try {
+    res = await fetch(`${BASE_URL}/auth/login`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+  } catch {
+    throw new NetworkError();
+  }
 
-  // Mock simples — qualquer email/senha válidos retornam sucesso
-  return {
-    accessToken: "mock-access-token-" + Date.now(),
-    refreshToken: "mock-refresh-token-" + Date.now(),
-    expiraEm: new Date(Date.now() + 60 * 60 * 1000).toISOString(),
-    estabelecimento: {
-      id: "mock-estabelecimento-uuid",
-      nome: body.email.split("@")[0].replace(/[^a-zA-Z0-9]/g, " "),
-      email: body.email,
-    },
-  };
+  if (!res.ok) {
+    const mensagem = await extractErrorMessage(res);
+    throw new ApiError(mensagem, res.status);
+  }
+
+  return res.json() as Promise<AuthResponse>;
 }
 
 /**
  * POST /api/auth/registro
- * Mock: simula criação de conta com delay de 500ms.
- * TODO: integrar com API real
+ * Cria uma nova conta de estabelecimento.
  */
 export async function registro(body: RegistroBody): Promise<AuthResponse> {
-  await delay(500);
+  let res: Response;
+  try {
+    res = await fetch(`${BASE_URL}/auth/registro`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+  } catch {
+    throw new NetworkError();
+  }
 
-  return {
-    accessToken: "mock-access-token-" + Date.now(),
-    refreshToken: "mock-refresh-token-" + Date.now(),
-    expiraEm: new Date(Date.now() + 60 * 60 * 1000).toISOString(),
-    estabelecimento: {
-      id: "mock-estabelecimento-uuid",
-      nome: body.nomeEstabelecimento,
-      email: body.email,
-    },
-  };
+  if (!res.ok) {
+    const mensagem = await extractErrorMessage(res);
+    throw new ApiError(mensagem, res.status);
+  }
+
+  return res.json() as Promise<AuthResponse>;
 }
 
 /**
  * POST /api/auth/logout
- * TODO: integrar com API real
+ * Invalida o refresh token (melhor esforço — falha silenciosamente).
  */
 export async function logout(refreshToken: string): Promise<void> {
-  await delay(200);
-  // TODO: chamar POST /api/auth/logout com { refreshToken }
-  void refreshToken;
+  try {
+    await fetch(`${BASE_URL}/auth/logout`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ refreshToken }),
+    });
+  } catch {
+    // logout best-effort — não bloquear a UI
+  }
 }

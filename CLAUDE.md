@@ -20,7 +20,7 @@ src/
 │   └── dashboard/          → Area autenticada
 │       ├── membros/        → Tela de membros (CRUD)
 │       ├── cobrancas/      → Placeholder
-│       └── configuracoes/  → Placeholder (404 ainda)
+│       └── configuracoes/  → Placeholder "Em breve"
 ├── components/
 │   ├── sections/           → Secoes da landing page
 │   ├── layout/             → Header, footer, sidebar
@@ -44,10 +44,12 @@ src/
 - Status badges: verde=Ativo, amarelo=Pausado, vermelho=Inadimplente, cinza=Cancelado
 
 ## Auth (estado atual)
-- Login e registro com **mock** (qualquer credencial funciona)
-- AuthContext com token em memoria
-- Rotas protegidas via middleware/context
-- **Pendente:** integrar com API real (Task 6a), auto-refresh de token (Task 6b)
+- Login e registro integrados com API real (`http://localhost:5000/api`)
+- `src/lib/api/client.ts` — HTTP client centralizado com auto-refresh de 401
+- `src/lib/api/auth.ts` — chamadas reais para /auth/login, /auth/registro, /auth/logout
+- AccessToken em memoria (React state) + refreshToken em localStorage
+- Auto-refresh: 401 → tenta /auth/refresh → retry; falha → logout + redirect /login
+- Erros da API propagados com mensagem amigável (ApiError, NetworkError)
 
 ## Contratos de API (OBRIGATÓRIO)
 Arquivo compartilhado: `C:\Projetos\PixRecorrente\Analise\CONTRATOS-API.md`
@@ -73,8 +75,8 @@ Template: `TEMPLATE.md` na mesma pasta.
 
 ## Estado Atual (2026-03-05)
 - Landing page: completa, generalizada, dark mode, responsiva
-- Login/Registro: mock funcional
+- Login/Registro: **integrado com API real**, erros de API e rede exibidos
 - Dashboard: sidebar, header, dark mode toggle
 - Membros: **CRUD completo** — tabela, paginacao, busca, filtros, modais (cadastro/edicao/exclusao), alteracao de status com transicoes validas, mock service in-memory
 - Cobrancas: placeholder
-- Configuracoes: rota nao existe (404)
+- Configuracoes: **placeholder funcional** (rota /dashboard/configuracoes existe)

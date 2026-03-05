@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Eye, EyeOff, Loader2 } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
+import { ApiError, NetworkError } from "@/lib/api/client";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -23,8 +24,14 @@ export default function LoginPage() {
     try {
       await login({ email, senha });
       router.push("/dashboard");
-    } catch {
-      setErro("Email ou senha incorretos. Tente novamente.");
+    } catch (err) {
+      if (err instanceof NetworkError) {
+        setErro(err.message);
+      } else if (err instanceof ApiError) {
+        setErro(err.mensagem);
+      } else {
+        setErro("Email ou senha incorretos. Tente novamente.");
+      }
     } finally {
       setLoading(false);
     }

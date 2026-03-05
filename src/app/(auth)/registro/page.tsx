@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Eye, EyeOff, Loader2 } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
+import { ApiError, NetworkError } from "@/lib/api/client";
 
 export default function RegistroPage() {
   const router = useRouter();
@@ -37,8 +38,14 @@ export default function RegistroPage() {
     try {
       await registro({ email, senha, nomeEstabelecimento });
       router.push("/dashboard");
-    } catch {
-      setErro("Não foi possível criar a conta. Tente novamente.");
+    } catch (err) {
+      if (err instanceof NetworkError) {
+        setErro(err.message);
+      } else if (err instanceof ApiError) {
+        setErro(err.mensagem);
+      } else {
+        setErro("Não foi possível criar a conta. Tente novamente.");
+      }
     } finally {
       setLoading(false);
     }
