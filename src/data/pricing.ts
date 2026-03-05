@@ -1,0 +1,65 @@
+import type { PricingPlan } from "@/types";
+
+export const plans: PricingPlan[] = [
+  {
+    name: "Grátis",
+    price: "R$ 0",
+    description: "Para começar e testar a plataforma",
+    features: [
+      "Até 30 membros",
+      "Cobranças via Pix",
+      "Régua de cobrança básica",
+      "Dashboard financeiro",
+      "Suporte por e-mail",
+    ],
+    cta: "Começar Grátis",
+  },
+  {
+    name: "Básico",
+    price: "R$ 49",
+    description: "Para negócios em crescimento",
+    features: [
+      "Até 100 membros",
+      "Cobranças via Pix",
+      "WhatsApp integrado",
+      "Régua de cobrança completa",
+      "Dashboard financeiro",
+      "Portal do membro",
+      "Suporte prioritário",
+    ],
+    cta: "Escolher Básico",
+  },
+  {
+    name: "Pro",
+    price: "R$ 99",
+    description: "Para negócios que querem o máximo",
+    features: [
+      "Até 300 membros",
+      "Cobranças via Pix",
+      "WhatsApp integrado",
+      "Régua de cobrança avançada",
+      "Dashboard completo",
+      "Portal do membro",
+      "Import de membros via planilha",
+      "Relatórios avançados",
+      "Suporte prioritário",
+    ],
+    highlighted: true,
+    cta: "Escolher Pro",
+  },
+  {
+    name: "Business",
+    price: "R$ 199",
+    description: "Para redes e grandes operações",
+    features: [
+      "Membros ilimitados",
+      "Tudo do plano Pro",
+      "Multi-unidades",
+      "API de integração",
+      "Gerente de conta dedicado",
+      "Onboarding personalizado",
+      "SLA garantido",
+    ],
+    cta: "Falar com Vendas",
+  },
+];
