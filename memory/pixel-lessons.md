@@ -1,7 +1,16 @@
-# Pixel - Lições Aprendidas
+# Pixel — Licoes e Memoria
 
-- Sempre testar botões em AMBOS os temas (light e dark). Botões com cores forçadas via className podem ficar invisíveis quando o tema muda. Atenção especial a botões sobre fundos coloridos (gradients, seções com bg fixo).
+## ADRs (Architecture Decision Records)
+- **OBRIGATORIO:** Antes de tomar qualquer decisao arquitetural, buscar em `C:\Projetos\PixRecorrente\Analise\adrs\` se ja existe ADR sobre o tema
+- Se existir, seguir a decisao documentada
+- Se nao existir e precisar tomar decisao nova, criar ADR seguindo o template em `adrs/TEMPLATE.md`
+- Numerar sequencialmente: ADR-001, ADR-002, etc.
+- Nome: `ADR-XXX-descricao-curta.md`
 
-## Regras de Negócio
-- CNPJ é string livre (não validar formato numérico). O Brasil passará a ter CNPJ alfanumérico. Aceitar qualquer string, sem máscara fixa.
-- CPF continua numérico com validação de dígitos verificadores.
+## Licoes de Sessoes Anteriores
+- Sempre ler CONTRATOS-API.md antes de consumir qualquer endpoint
+- Nunca inventar contratos — se nao esta documentado, perguntar pra Vox
+- Dark mode em todo componente novo (dark: variants)
+- Dados em /data/, nao hardcoded em componentes
+- Build (npm run build) tem que passar antes de reportar conclusao
+- TypeScript strict, sem any

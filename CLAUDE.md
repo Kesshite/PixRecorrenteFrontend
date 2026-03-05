@@ -59,10 +59,22 @@ Arquivo compartilhado: `C:\Projetos\PixRecorrente\Analise\CONTRATOS-API.md`
 - Build: `npm run build`
 - Lint: `npm run lint`
 
+## ADRs (Architecture Decision Records)
+
+Pasta compartilhada: `C:\Projetos\PixRecorrente\Analise\adrs\`
+Template: `TEMPLATE.md` na mesma pasta.
+
+**Regras:**
+1. Antes de tomar qualquer decisao arquitetural, busque em `Analise/adrs/` se ja existe ADR sobre o tema
+2. Se existir, siga a decisao documentada
+3. Se nao existir e voce precisar tomar uma decisao nova, crie uma ADR seguindo o template
+4. Numere sequencialmente: ADR-001, ADR-002, etc.
+5. Nome do arquivo: `ADR-XXX-descricao-curta.md` (sem acentos)
+
 ## Estado Atual (2026-03-05)
 - Landing page: completa, generalizada, dark mode, responsiva
 - Login/Registro: mock funcional
 - Dashboard: sidebar, header, dark mode toggle
-- Membros: **placeholder "Em breve"** — Task #6 pendente
+- Membros: **CRUD completo** — tabela, paginacao, busca, filtros, modais (cadastro/edicao/exclusao), alteracao de status com transicoes validas, mock service in-memory
 - Cobrancas: placeholder
 - Configuracoes: rota nao existe (404)
