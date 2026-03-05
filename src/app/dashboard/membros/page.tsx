@@ -14,9 +14,23 @@ import {
 } from "lucide-react";
 import { Modal } from "@/components/ui/modal";
 import { StatusBadge } from "@/components/ui/badge";
-import { membrosService, TRANSICOES } from "@/lib/membros-service";
+import {
+  listarMembros,
+  criarMembro,
+  atualizarMembro,
+  excluirMembro,
+  alterarStatusMembro,
+} from "@/lib/api/membros";
+import { ApiError } from "@/lib/api/client";
 import { cn } from "@/lib/utils";
 import type { Membro, StatusMembro, CriarMembroBody } from "@/types";
+
+const TRANSICOES: Record<StatusMembro, StatusMembro[]> = {
+  Ativo: ["Pausado", "Cancelado", "Inadimplente"],
+  Pausado: ["Ativo", "Cancelado"],
+  Inadimplente: ["Ativo", "Cancelado"],
+  Cancelado: [],
+};
 
 // ---------- Helpers ----------
 
@@ -162,6 +176,7 @@ interface MembroFormProps {
   initial: FormState;
   loading: boolean;
   title: string;
+  apiError?: string;
   onSubmit: (body: CriarMembroBody) => void;
   onCancel: () => void;
 }
@@ -170,6 +185,7 @@ function MembroForm({
   initial,
   loading,
   title,
+  apiError,
   onSubmit,
   onCancel,
 }: MembroFormProps) {
@@ -269,6 +285,12 @@ function MembroForm({
           placeholder="vip, mensal, personal"
         />
       </Field>
+
+      {apiError && (
+        <p className="text-sm text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-950/30 px-3 py-2 rounded-lg">
+          {apiError}
+        </p>
+      )}
 
       <div className="flex gap-3 pt-2">
         <button
@@ -510,6 +532,7 @@ export default function MembrosPage() {
   const [modalMode, setModalMode] = useState<ModalMode>(null);
   const [membroEditando, setMembroEditando] = useState<Membro | null>(null);
   const [formLoading, setFormLoading] = useState(false);
+  const [formApiError, setFormApiError] = useState<string | undefined>(undefined);
 
   const [confirmExcluir, setConfirmExcluir] = useState<Membro | null>(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
@@ -521,7 +544,7 @@ export default function MembrosPage() {
   const carregar = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await membrosService.listar({
+      const res = await listarMembros({
         pagina,
         porPagina: POR_PAGINA,
         busca,
@@ -530,6 +553,8 @@ export default function MembrosPage() {
       setMembros(res.items);
       setTotal(res.total);
       setTotalPaginas(res.totalPaginas);
+    } catch {
+      // erro de rede ou 401 — já tratado pelo apiFetch (redirect login)
     } finally {
       setLoading(false);
     }
@@ -555,14 +580,19 @@ export default function MembrosPage() {
   // Criar
   async function handleCriar(body: CriarMembroBody) {
     setFormLoading(true);
+    setFormApiError(undefined);
     try {
-      await membrosService.criar(body);
+      await criarMembro(body);
       setModalMode(null);
       setPagina(1);
       await carregar();
       showToast("Membro cadastrado com sucesso!", "ok");
-    } catch {
-      showToast("Erro ao cadastrar membro.", "err");
+    } catch (err) {
+      if (err instanceof ApiError) {
+        setFormApiError(err.mensagem);
+      } else {
+        showToast("Erro ao cadastrar membro.", "err");
+      }
     } finally {
       setFormLoading(false);
     }
@@ -572,14 +602,19 @@ export default function MembrosPage() {
   async function handleEditar(body: CriarMembroBody) {
     if (!membroEditando) return;
     setFormLoading(true);
+    setFormApiError(undefined);
     try {
-      await membrosService.atualizar(membroEditando.id, body);
+      await atualizarMembro(membroEditando.id, body);
       setModalMode(null);
       setMembroEditando(null);
       await carregar();
       showToast("Membro atualizado com sucesso!", "ok");
-    } catch {
-      showToast("Erro ao atualizar membro.", "err");
+    } catch (err) {
+      if (err instanceof ApiError) {
+        setFormApiError(err.mensagem);
+      } else {
+        showToast("Erro ao atualizar membro.", "err");
+      }
     } finally {
       setFormLoading(false);
     }
@@ -590,13 +625,16 @@ export default function MembrosPage() {
     if (!confirmExcluir) return;
     setDeleteLoading(true);
     try {
-      await membrosService.excluir(confirmExcluir.id);
+      await excluirMembro(confirmExcluir.id);
       setConfirmExcluir(null);
       if (membros.length === 1 && pagina > 1) setPagina((p) => p - 1);
       else await carregar();
       showToast("Membro excluído.", "ok");
-    } catch {
-      showToast("Erro ao excluir membro.", "err");
+    } catch (err) {
+      showToast(
+        err instanceof ApiError ? err.mensagem : "Erro ao excluir membro.",
+        "err"
+      );
     } finally {
       setDeleteLoading(false);
     }
@@ -605,18 +643,23 @@ export default function MembrosPage() {
   // Alterar status
   async function handleAlterarStatus(id: string, novoStatus: StatusMembro) {
     try {
-      await membrosService.alterarStatus(id, novoStatus);
+      await alterarStatusMembro(id, novoStatus);
       await carregar();
       showToast(`Status alterado para ${novoStatus}.`, "ok");
     } catch (err) {
       showToast(
-        err instanceof Error ? err.message : "Erro ao alterar status.",
+        err instanceof ApiError
+          ? err.mensagem
+          : err instanceof Error
+            ? err.message
+            : "Erro ao alterar status.",
         "err"
       );
     }
   }
 
   function abrirEditar(m: Membro) {
+    setFormApiError(undefined);
     setMembroEditando(m);
     setModalMode("editar");
   }
@@ -798,15 +841,16 @@ export default function MembrosPage() {
       {/* Modal Criar */}
       <Modal
         isOpen={modalMode === "criar"}
-        onClose={() => setModalMode(null)}
+        onClose={() => { setModalMode(null); setFormApiError(undefined); }}
         className="max-w-lg"
       >
         <MembroForm
           initial={emptyForm()}
           loading={formLoading}
           title="Novo Membro"
+          apiError={formApiError}
           onSubmit={handleCriar}
-          onCancel={() => setModalMode(null)}
+          onCancel={() => { setModalMode(null); setFormApiError(undefined); }}
         />
       </Modal>
 
@@ -816,6 +860,7 @@ export default function MembrosPage() {
         onClose={() => {
           setModalMode(null);
           setMembroEditando(null);
+          setFormApiError(undefined);
         }}
         className="max-w-lg"
       >
@@ -824,10 +869,12 @@ export default function MembrosPage() {
             initial={fromMembro(membroEditando)}
             loading={formLoading}
             title="Editar Membro"
+            apiError={formApiError}
             onSubmit={handleEditar}
             onCancel={() => {
               setModalMode(null);
               setMembroEditando(null);
+              setFormApiError(undefined);
             }}
           />
         )}

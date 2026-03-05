@@ -73,10 +73,15 @@ Template: `TEMPLATE.md` na mesma pasta.
 4. Numere sequencialmente: ADR-001, ADR-002, etc.
 5. Nome do arquivo: `ADR-XXX-descricao-curta.md` (sem acentos)
 
+## Membros API (estado atual)
+- `src/lib/api/membros.ts` — client HTTP real para todos os 6 endpoints de membros
+- Status enum: backend retorna/aceita numerico (1=Ativo,2=Inadimplente,3=Pausado,4=Cancelado); frontend normaliza na borda
+- Divergencia documentada em `DUVIDAS.md`
+
 ## Estado Atual (2026-03-05)
 - Landing page: completa, generalizada, dark mode, responsiva
 - Login/Registro: **integrado com API real**, erros de API e rede exibidos
 - Dashboard: sidebar, header, dark mode toggle
-- Membros: **CRUD completo** — tabela, paginacao, busca, filtros, modais (cadastro/edicao/exclusao), alteracao de status com transicoes validas, mock service in-memory
+- Membros: **CRUD completo integrado com API real** — tabela, paginacao, busca, filtros, modais (cadastro/edicao/exclusao), alteracao de status com transicoes validas; erros de API exibidos no formulario
 - Cobrancas: placeholder
 - Configuracoes: **placeholder funcional** (rota /dashboard/configuracoes existe)
