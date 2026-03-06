@@ -7,42 +7,6 @@ import type {
   ListagemPaginadaDTO,
 } from "@/types";
 
-// ---- Divergência documentada (ver DUVIDAS.md) ----
-// O backend retorna e aceita status como enum numérico:
-//   1=Ativo, 2=Inadimplente, 3=Pausado, 4=Cancelado
-// O CONTRATOS-API.md define string. Mapeamos na borda.
-
-type StatusNumerico = 1 | 2 | 3 | 4;
-
-const NUM_TO_STATUS: Record<StatusNumerico, StatusMembro> = {
-  1: "Ativo",
-  2: "Inadimplente",
-  3: "Pausado",
-  4: "Cancelado",
-};
-
-const STATUS_TO_NUM: Record<StatusMembro, StatusNumerico> = {
-  Ativo: 1,
-  Inadimplente: 2,
-  Pausado: 3,
-  Cancelado: 4,
-};
-
-interface MembroRaw extends Omit<Membro, "status"> {
-  status: StatusMembro | StatusNumerico;
-}
-
-function normalizeStatus(raw: StatusMembro | StatusNumerico): StatusMembro {
-  if (typeof raw === "number") {
-    return NUM_TO_STATUS[raw as StatusNumerico] ?? "Ativo";
-  }
-  return raw;
-}
-
-function normalizeMembro(raw: MembroRaw): Membro {
-  return { ...raw, status: normalizeStatus(raw.status) };
-}
-
 // ---- Params ----
 
 export interface ListarMembrosParams {
@@ -64,29 +28,24 @@ export async function listarMembros(
   if (busca?.trim()) qs.set("busca", busca.trim());
   if (status) qs.set("status", status);
 
-  const raw = await apiFetchJson<ListagemPaginadaDTO<MembroRaw>>(
-    `/membros?${qs}`,
-  );
-  return { ...raw, items: raw.items.map(normalizeMembro) };
+  return apiFetchJson<ListagemPaginadaDTO<Membro>>(`/membros?${qs}`);
 }
 
 export async function criarMembro(body: CriarMembroBody): Promise<Membro> {
-  const raw = await apiFetchJson<MembroRaw>("/membros", {
+  return apiFetchJson<Membro>("/membros", {
     method: "POST",
     body: JSON.stringify(body),
   });
-  return normalizeMembro(raw);
 }
 
 export async function atualizarMembro(
   id: string,
   body: AtualizarMembroBody,
 ): Promise<Membro> {
-  const raw = await apiFetchJson<MembroRaw>(`/membros/${id}`, {
+  return apiFetchJson<Membro>(`/membros/${id}`, {
     method: "PUT",
     body: JSON.stringify(body),
   });
-  return normalizeMembro(raw);
 }
 
 export async function excluirMembro(id: string): Promise<void> {
@@ -108,9 +67,8 @@ export async function alterarStatusMembro(
   id: string,
   novoStatus: StatusMembro,
 ): Promise<Membro> {
-  const raw = await apiFetchJson<MembroRaw>(`/membros/${id}/status`, {
+  return apiFetchJson<Membro>(`/membros/${id}/status`, {
     method: "PATCH",
-    body: JSON.stringify({ status: STATUS_TO_NUM[novoStatus] }),
+    body: JSON.stringify({ status: novoStatus }),
   });
-  return normalizeMembro(raw);
 }
