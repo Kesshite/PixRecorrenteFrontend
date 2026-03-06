@@ -123,3 +123,28 @@ export interface CriarCobrancaBody {
   valor?: number;
   dataVencimento?: string;
 }
+
+// ---------- Estabelecimento ----------
+
+export interface Estabelecimento {
+  id: string;
+  nome: string;
+  documento: string;
+  email: string;
+  telefone: string | null;
+  chavePix: string | null;
+  plano: string | null;
+  status: string | null;
+  logotipo: string | null;
+  regraCobranca: string | null;
+  criadoEm: string;
+  atualizadoEm: string;
+}
+
+export interface AtualizarEstabelecimentoBody {
+  nome: string;
+  documento: string;
+  telefone: string | null;
+  chavePix: string | null;
+  logotipo: string | null;
+}
