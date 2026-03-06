@@ -374,7 +374,7 @@ function StatusDropdown({
   const [pos, setPos] = useState({ top: 0, right: 0 });
   const btnRef = useRef<HTMLButtonElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
-  const opcoes = TRANSICOES[membro.status];
+  const opcoes = TRANSICOES[membro.status] ?? [];
 
   function handleOpen() {
     if (!btnRef.current) return;
