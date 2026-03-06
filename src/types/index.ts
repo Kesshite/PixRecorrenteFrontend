@@ -93,3 +93,33 @@ export interface CriarMembroBody {
 }
 
 export type AtualizarMembroBody = CriarMembroBody;
+
+// ---------- Cobranças ----------
+
+export type StatusCobranca = "Pendente" | "Paga" | "Vencida" | "Cancelada";
+
+export interface Cobranca {
+  id: string;
+  estabelecimentoId: string;
+  membroId: string;
+  nomeMembro: string;
+  valor: number;
+  dataVencimento: string;
+  status: StatusCobranca;
+  provedorPsp?: string;
+  idCobrancaPsp?: string;
+  brcode?: string;
+  qrcodeUrl?: string;
+  linkPagamento?: string;
+  pagoEm?: string;
+  valorPago?: number;
+  statusNotificacao?: string;
+  criadoEm: string;
+  atualizadoEm: string;
+}
+
+export interface CriarCobrancaBody {
+  membroId: string;
+  valor?: number;
+  dataVencimento?: string;
+}
