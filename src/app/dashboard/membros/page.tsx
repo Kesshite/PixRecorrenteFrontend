@@ -30,7 +30,7 @@ const TRANSICOES: Record<StatusMembro, StatusMembro[]> = {
   Ativo: ["Pausado", "Cancelado", "Inadimplente"],
   Pausado: ["Ativo", "Cancelado"],
   Inadimplente: ["Ativo", "Cancelado"],
-  Cancelado: [],
+  Cancelado: ["Ativo"],
 };
 
 // ---------- Helpers ----------
