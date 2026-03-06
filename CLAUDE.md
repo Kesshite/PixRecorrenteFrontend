@@ -37,6 +37,9 @@ src/
 - **Copy honesto** — sem numeros inventados ou social proof fake
 - **Build tem que passar** — sempre rodar `npm run build` ao final
 - **TypeScript strict** — sem `any`
+- **NUNCA pedir UUID/ID pro usuario** — sempre usar dropdown com busca (ADR-015)
+- Quando uma entidade referencia outra (ex: Cobranca→Membro), usar dropdown/combobox searchable
+- Dropdown deve: carregar primeiros N resultados, filtrar conforme digita (debounce ~300ms), mostrar nome legivel
 
 ## Paleta
 - Primaria: emerald/green (Pix, dinheiro, pagamentos)

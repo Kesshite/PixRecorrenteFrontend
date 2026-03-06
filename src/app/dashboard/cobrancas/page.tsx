@@ -7,6 +7,7 @@ import {
   Search,
   ChevronLeft,
   ChevronRight,
+  ChevronDown,
   MoreVertical,
   Loader2,
   X,
@@ -18,9 +19,10 @@ import {
   criarCobranca,
   cancelarCobranca,
 } from "@/lib/api/cobrancas";
+import { listarMembros } from "@/lib/api/membros";
 import { ApiError } from "@/lib/api/client";
 import { cn } from "@/lib/utils";
-import type { Cobranca, StatusCobranca, CriarCobrancaBody } from "@/types";
+import type { Cobranca, StatusCobranca, CriarCobrancaBody, Membro } from "@/types";
 
 // ---------- Helpers ----------
 
@@ -61,7 +63,7 @@ function emptyForm(): FormState {
 
 function validateForm(form: FormState): FormErrors {
   const errors: FormErrors = {};
-  if (!form.membroId.trim()) errors.membroId = "ID do membro é obrigatório";
+  if (!form.membroId.trim()) errors.membroId = "Selecione um membro";
   if (form.valor) {
     const v = parseFloat(form.valor);
     if (isNaN(v) || v <= 0) errors.valor = "Informe um valor maior que zero";
@@ -74,6 +76,17 @@ function toBody(form: FormState): CriarCobrancaBody {
   if (form.valor.trim()) body.valor = parseFloat(form.valor);
   if (form.dataVencimento.trim()) body.dataVencimento = form.dataVencimento;
   return body;
+}
+
+function nextVencimento(dia: number): string {
+  const today = new Date();
+  const y = today.getFullYear();
+  const m = today.getMonth();
+  const candidate = new Date(y, m, dia);
+  if (candidate <= today) {
+    return new Date(y, m + 1, dia).toISOString().split("T")[0];
+  }
+  return candidate.toISOString().split("T")[0];
 }
 
 // ---------- Field / Input helpers ----------
@@ -128,6 +141,201 @@ function TextInput({
   );
 }
 
+// ---------- MembroCombobox ----------
+
+function MembroCombobox({
+  value,
+  onChange,
+  error,
+}: {
+  value: string;
+  onChange: (id: string, membro: Membro | null) => void;
+  error?: string;
+}) {
+  const [open, setOpen] = useState(false);
+  const [search, setSearch] = useState("");
+  const [opcoes, setOpcoes] = useState<Membro[]>([]);
+  const [loadingOpcoes, setLoadingOpcoes] = useState(false);
+  const [selecionado, setSelecionado] = useState<Membro | null>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  async function buscarMembros(termo: string) {
+    setLoadingOpcoes(true);
+    try {
+      const res = await listarMembros({
+        porPagina: 10,
+        status: "Ativo",
+        busca: termo.trim() || undefined,
+      });
+      setOpcoes(res.items);
+    } catch {
+      // silently ignore — erros de rede não devem travar o dropdown
+    } finally {
+      setLoadingOpcoes(false);
+    }
+  }
+
+  function handleOpen() {
+    setSearch("");
+    buscarMembros("");
+    setOpen(true);
+    setTimeout(() => inputRef.current?.focus(), 50);
+  }
+
+  function handleSearch(v: string) {
+    setSearch(v);
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => buscarMembros(v), 300);
+  }
+
+  function handleSelect(membro: Membro) {
+    setSelecionado(membro);
+    onChange(membro.id, membro);
+    setOpen(false);
+    setSearch("");
+  }
+
+  function handleClear() {
+    setSelecionado(null);
+    onChange("", null);
+  }
+
+  useEffect(() => {
+    if (!open) return;
+    function handleClick(e: MouseEvent) {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+        setOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, [open]);
+
+  // Reset quando o form é limpo externamente (value vazio)
+  useEffect(() => {
+    if (!value) setSelecionado(null);
+  }, [value]);
+
+  function descricaoMembro(m: Membro) {
+    return [
+      m.cpf && `CPF ${m.cpf}`,
+      m.nomePlano,
+      m.valorMensal > 0 && formatBRL(m.valorMensal),
+    ]
+      .filter(Boolean)
+      .join(" · ");
+  }
+
+  return (
+    <div ref={containerRef} className="relative">
+      <button
+        type="button"
+        onClick={handleOpen}
+        className={cn(
+          "w-full px-3 py-2 text-sm rounded-lg border text-left flex items-center justify-between gap-2",
+          "bg-white dark:bg-slate-900 transition-shadow",
+          "focus:outline-none focus:ring-2 focus:ring-emerald-500 dark:focus:ring-emerald-400",
+          error
+            ? "border-red-400 dark:border-red-500"
+            : "border-gray-200 dark:border-slate-700"
+        )}
+      >
+        {selecionado ? (
+          <span className="flex-1 truncate text-gray-900 dark:text-white">
+            {selecionado.nome}
+          </span>
+        ) : (
+          <span className="flex-1 text-gray-400 dark:text-slate-500">
+            Buscar membro...
+          </span>
+        )}
+        <div className="flex items-center gap-1 shrink-0">
+          {selecionado && (
+            <span
+              role="button"
+              tabIndex={0}
+              onClick={(e) => {
+                e.stopPropagation();
+                handleClear();
+              }}
+              onKeyDown={(e) => e.key === "Enter" && handleClear()}
+              className="text-gray-400 dark:text-slate-500 hover:text-gray-600 dark:hover:text-slate-300 cursor-pointer"
+            >
+              <X size={13} />
+            </span>
+          )}
+          <ChevronDown
+            size={14}
+            className={cn(
+              "text-gray-400 dark:text-slate-500 transition-transform duration-150",
+              open && "rotate-180"
+            )}
+          />
+        </div>
+      </button>
+
+      {open && (
+        <div className="absolute z-50 mt-1 w-full bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-lg shadow-lg overflow-hidden">
+          <div className="p-2 border-b border-gray-100 dark:border-slate-700">
+            <div className="relative">
+              <Search
+                size={13}
+                className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 dark:text-slate-500"
+              />
+              <input
+                ref={inputRef}
+                type="text"
+                value={search}
+                onChange={(e) => handleSearch(e.target.value)}
+                placeholder="Buscar por nome..."
+                className="w-full pl-7 pr-3 py-1.5 text-sm rounded-md border border-gray-200 dark:border-slate-600 bg-white dark:bg-slate-900 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 dark:focus:ring-emerald-400"
+              />
+            </div>
+          </div>
+
+          <div className="max-h-52 overflow-y-auto py-1">
+            {loadingOpcoes ? (
+              <div className="flex items-center justify-center py-5">
+                <Loader2 size={16} className="animate-spin text-gray-400 dark:text-slate-500" />
+              </div>
+            ) : opcoes.length === 0 ? (
+              <p className="px-3 py-4 text-sm text-gray-400 dark:text-slate-500 text-center">
+                Nenhum membro ativo encontrado
+              </p>
+            ) : (
+              opcoes.map((m) => {
+                const desc = descricaoMembro(m);
+                return (
+                  <button
+                    key={m.id}
+                    type="button"
+                    onClick={() => handleSelect(m)}
+                    className={cn(
+                      "w-full px-3 py-2 text-left hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors",
+                      selecionado?.id === m.id && "bg-emerald-50 dark:bg-emerald-950/30"
+                    )}
+                  >
+                    <p className="text-sm font-medium text-gray-900 dark:text-white leading-snug">
+                      {m.nome}
+                    </p>
+                    {desc && (
+                      <p className="text-xs text-gray-500 dark:text-slate-400 leading-snug mt-0.5">
+                        {desc}
+                      </p>
+                    )}
+                  </button>
+                );
+              })
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ---------- CobrancaForm ----------
 
 interface CobrancaFormProps {
@@ -146,6 +354,24 @@ function CobrancaForm({ loading, apiError, onSubmit, onCancel }: CobrancaFormPro
     setErrors((prev) => ({ ...prev, [field]: undefined }));
   }
 
+  function handleMembroChange(id: string, membro: Membro | null) {
+    set("membroId", id);
+    if (membro) {
+      if (membro.valorMensal > 0) {
+        setForm((prev) => ({ ...prev, membroId: id, valor: String(membro.valorMensal) }));
+        setErrors((prev) => ({ ...prev, membroId: undefined, valor: undefined }));
+      }
+      if (membro.diaVencimento) {
+        setForm((prev) => ({
+          ...prev,
+          membroId: id,
+          valor: membro.valorMensal > 0 ? String(membro.valorMensal) : prev.valor,
+          dataVencimento: nextVencimento(membro.diaVencimento),
+        }));
+      }
+    }
+  }
+
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     const errs = validateForm(form);
@@ -156,17 +382,22 @@ function CobrancaForm({ loading, apiError, onSubmit, onCancel }: CobrancaFormPro
     onSubmit(toBody(form));
   }
 
+  const valorPlaceholder =
+    form.valor
+      ? undefined
+      : "Padrão do plano";
+
   return (
     <form onSubmit={handleSubmit} className="p-6 space-y-4">
       <h2 className="text-lg font-semibold text-gray-900 dark:text-white pr-8">
         Nova Cobrança
       </h2>
 
-      <Field label="ID do Membro *" error={errors.membroId}>
-        <TextInput
+      <Field label="Membro *" error={errors.membroId}>
+        <MembroCombobox
           value={form.membroId}
-          onChange={(v) => set("membroId", v)}
-          placeholder="UUID do membro"
+          onChange={handleMembroChange}
+          error={errors.membroId}
         />
       </Field>
 
@@ -178,7 +409,7 @@ function CobrancaForm({ loading, apiError, onSubmit, onCancel }: CobrancaFormPro
             step="0.01"
             value={form.valor}
             onChange={(v) => set("valor", v)}
-            placeholder="Padrão do plano"
+            placeholder={valorPlaceholder ?? "129,90"}
           />
         </Field>
         <Field label="Data de Vencimento">
