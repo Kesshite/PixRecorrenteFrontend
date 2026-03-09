@@ -14,50 +14,62 @@ Frontend do **PixRecorrente** — plataforma SaaS de cobrança recorrente via Pi
 ```
 src/
 ├── app/                    → Pages e layouts (App Router)
-│   ├── (public)/           → Landing page (nao autenticado)
-│   ├── login/              → Tela de login
-│   ├── registro/           → Tela de registro
-│   └── dashboard/          → Area autenticada
-│       ├── membros/        → Tela de membros (CRUD)
-│       ├── cobrancas/      → Placeholder
-│       └── configuracoes/  → Placeholder "Em breve"
+│   ├── (landing)/          → Landing page (não autenticado)
+│   ├── (auth)/
+│   │   ├── login/          → Tela de login
+│   │   └── registro/       → Tela de registro
+│   └── dashboard/          → Área autenticada
+│       ├── membros/        → CRUD de membros (integrado API)
+│       ├── cobrancas/      → CRUD de cobranças (integrado API)
+│       └── configuracoes/  → Perfil do estabelecimento (integrado API)
 ├── components/
-│   ├── sections/           → Secoes da landing page
-│   ├── layout/             → Header, footer, sidebar
-│   └── ui/                 → Button, Card, Modal, Badge
-├── data/                   → Dados estaticos e mocks
-├── lib/                    → Contexts, providers, utils
+│   ├── sections/           → Seções da landing page (hero, features, pricing, etc.)
+│   ├── layout/             → Header, Footer
+│   ├── membros/            → Componentes de membros (modal, delete-dialog, status-badge)
+│   ├── ui/                 → Button, Card, Modal, Badge
+│   └── signup-modal.tsx    → Modal de lista de espera
+├── data/                   → Dados estáticos e mocks
+├── lib/
+│   ├── api/                → HTTP clients reais (auth, client, membros, cobrancas, estabelecimento)
+│   └── contexts/           → AuthContext, providers
 └── types/                  → Tipos TypeScript
 ```
 
 ## Convenções
-- **Server Components por padrao** — "use client" so com state/effects/handlers
-- **Dados em /data/** — componentes nao devem ter arrays hardcoded
+- **Server Components por padrão** — "use client" só com state/effects/handlers
+- **Dados em /data/** — componentes não devem ter arrays hardcoded
 - **Dark mode em tudo** — sempre incluir dark: variants
-- **Copy honesto** — sem numeros inventados ou social proof fake
+- **Copy honesto** — sem números inventados ou social proof fake
 - **Build tem que passar** — sempre rodar `npm run build` ao final
 - **TypeScript strict** — sem `any`
-- **NUNCA pedir UUID/ID pro usuario** — sempre usar dropdown com busca (ADR-015)
-- Quando uma entidade referencia outra (ex: Cobranca→Membro), usar dropdown/combobox searchable
-- Dropdown deve: carregar primeiros N resultados, filtrar conforme digita (debounce ~300ms), mostrar nome legivel
+- **NUNCA pedir UUID/ID pro usuário** — sempre usar dropdown com busca (ADR-015)
+- Quando uma entidade referencia outra (ex: Cobrança→Membro), usar dropdown/combobox searchable
+- Dropdown deve: carregar primeiros N resultados, filtrar conforme digita (debounce ~300ms), mostrar nome legível
 
 ## Paleta
-- Primaria: emerald/green (Pix, dinheiro, pagamentos)
+- Primária: emerald/green (Pix, dinheiro, pagamentos)
 - Dark mode: slate backgrounds
 - Status badges: verde=Ativo, amarelo=Pausado, vermelho=Inadimplente, cinza=Cancelado
 
-## Auth (estado atual)
+## Auth
 - Login e registro integrados com API real (`http://localhost:5000/api`)
 - `src/lib/api/client.ts` — HTTP client centralizado com auto-refresh de 401
-- `src/lib/api/auth.ts` — chamadas reais para /auth/login, /auth/registro, /auth/logout
-- AccessToken em memoria (React state) + refreshToken em localStorage
+- `src/lib/api/auth.ts` — chamadas reais para /auth/login, /auth/registro, /auth/logout, /auth/refresh
+- AccessToken em memória (React state) + refreshToken em localStorage
 - Auto-refresh: 401 → tenta /auth/refresh → retry; falha → logout + redirect /login
 - Erros da API propagados com mensagem amigável (ApiError, NetworkError)
+
+## API Clients
+- `src/lib/api/client.ts` — base HTTP com interceptor de token e auto-refresh
+- `src/lib/api/auth.ts` — registro, login, refresh, logout
+- `src/lib/api/membros.ts` — CRUD completo (6 endpoints)
+- `src/lib/api/cobrancas.ts` — CRUD + cancelamento (4 endpoints)
+- `src/lib/api/estabelecimento.ts` — GET + PUT perfil
 
 ## Contratos de API (OBRIGATÓRIO)
 Arquivo compartilhado: `C:\Projetos\PixRecorrente\Analise\CONTRATOS-API.md`
 
-**Antes de consumir qualquer endpoint, LEIA esse arquivo.** Ele e a fonte da verdade. NUNCA invente contratos.
+**Antes de consumir qualquer endpoint, LEIA esse arquivo.** Ele é a fonte da verdade. NUNCA invente contratos.
 
 ## Comandos
 - Dev: `npm run dev` (porta 3000)
@@ -70,21 +82,16 @@ Pasta compartilhada: `C:\Projetos\PixRecorrente\Analise\adrs\`
 Template: `TEMPLATE.md` na mesma pasta.
 
 **Regras:**
-1. Antes de tomar qualquer decisao arquitetural, busque em `Analise/adrs/` se ja existe ADR sobre o tema
-2. Se existir, siga a decisao documentada
-3. Se nao existir e voce precisar tomar uma decisao nova, crie uma ADR seguindo o template
+1. Antes de tomar qualquer decisão arquitetural, busque em `Analise/adrs/` se já existe ADR sobre o tema
+2. Se existir, siga a decisão documentada
+3. Se não existir e você precisar tomar uma decisão nova, crie uma ADR seguindo o template
 4. Numere sequencialmente: ADR-001, ADR-002, etc.
 5. Nome do arquivo: `ADR-XXX-descricao-curta.md` (sem acentos)
 
-## Membros API (estado atual)
-- `src/lib/api/membros.ts` — client HTTP real para todos os 6 endpoints de membros
-- Status enum: backend retorna/aceita numerico (1=Ativo,2=Inadimplente,3=Pausado,4=Cancelado); frontend normaliza na borda
-- Divergencia documentada em `DUVIDAS.md`
-
-## Estado Atual (2026-03-05)
-- Landing page: completa, generalizada, dark mode, responsiva
-- Login/Registro: **integrado com API real**, erros de API e rede exibidos
-- Dashboard: sidebar, header, dark mode toggle
-- Membros: **CRUD completo integrado com API real** — tabela, paginacao, busca, filtros, modais (cadastro/edicao/exclusao), alteracao de status com transicoes validas; erros de API exibidos no formulario
-- Cobrancas: placeholder
-- Configuracoes: **placeholder funcional** (rota /dashboard/configuracoes existe)
+## Estado Atual (2026-03-09)
+- **Landing page:** completa, generalizada, dark mode, responsiva, signup modal (lista de espera)
+- **Login/Registro:** integrado com API real, erros de API e rede exibidos, auto-refresh de token
+- **Dashboard:** sidebar, header, dark mode toggle, responsivo
+- **Membros:** CRUD completo integrado com API real — tabela, paginação, busca, filtros, modais (cadastro/edição/exclusão), alteração de status com transições válidas, reativação de cancelados
+- **Cobranças:** CRUD completo integrado com API real — tabela, paginação, busca, filtros, modal com dropdown searchable de membro (auto-preenche valor/vencimento), cancelamento
+- **Configurações:** formulário completo integrado com API real — dados do estabelecimento, chave Pix, plano/status readonly, loading skeleton, validação client-side, toast
