@@ -79,15 +79,18 @@ Arquivo compartilhado: `C:\Projetos\PixRecorrente\Analise\CONTRATOS-API.md`
 
 ## ADRs (Architecture Decision Records)
 
-Pasta compartilhada: `C:\Projetos\PixRecorrente\Analise\adrs\`
+Pasta compartilhada: `C:\Projetos\PixRecorrente\Analise\ADRs\`
 Template: `TEMPLATE.md` na mesma pasta.
 
+**⚠️ SEMPRE leia `Analise/ADRs/indice.md` PRIMEIRO.** O índice contém o resumo de todas as ADRs. Só abra a ADR completa se a task exigir detalhes daquela decisão específica. Isso economiza tokens.
+
 **Regras:**
-1. Antes de tomar qualquer decisão arquitetural, busque em `Analise/adrs/` se já existe ADR sobre o tema
-2. Se existir, siga a decisão documentada
+1. Antes de tomar qualquer decisão arquitetural, leia o índice de ADRs
+2. Se existir ADR sobre o tema, siga a decisão documentada
 3. Se não existir e você precisar tomar uma decisão nova, crie uma ADR seguindo o template
 4. Numere sequencialmente: ADR-001, ADR-002, etc.
 5. Nome do arquivo: `ADR-XXX-descricao-curta.md` (sem acentos)
+6. **Atualize o indice.md** ao criar/alterar uma ADR
 
 ## Estado Atual (2026-03-09)
 - **Landing page:** completa, generalizada, dark mode, responsiva, signup modal (lista de espera)
