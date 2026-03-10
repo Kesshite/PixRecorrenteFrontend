@@ -7,6 +7,7 @@ import {
   LayoutDashboard,
   Users,
   CreditCard,
+  ArrowLeftRight,
   Settings,
   LogOut,
   Menu,
@@ -21,6 +22,7 @@ const navItems = [
   { href: "/dashboard", label: "Início", icon: LayoutDashboard },
   { href: "/dashboard/membros", label: "Membros", icon: Users },
   { href: "/dashboard/cobrancas", label: "Cobranças", icon: CreditCard },
+  { href: "/dashboard/transacoes", label: "Transações", icon: ArrowLeftRight },
   { href: "/dashboard/configuracoes", label: "Configurações", icon: Settings },
 ];
 

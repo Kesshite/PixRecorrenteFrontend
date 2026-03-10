@@ -1,5 +1,5 @@
 import { cn } from "@/lib/utils";
-import type { StatusMembro, StatusCobranca } from "@/types";
+import type { StatusMembro, StatusCobranca, TipoTransacao } from "@/types";
 
 const variants: Record<StatusMembro, string> = {
   Ativo: "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-400",
@@ -56,6 +56,39 @@ export function CobrancaStatusBadge({ status, className }: CobrancaStatusBadgePr
       )}
     >
       {status}
+    </span>
+  );
+}
+
+// ---------- Transação ----------
+
+const transacaoVariants: Record<TipoTransacao, string> = {
+  Credito:
+    "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-400",
+  Estorno:
+    "bg-red-100 text-red-700 dark:bg-red-950/50 dark:text-red-400",
+};
+
+const transacaoLabels: Record<TipoTransacao, string> = {
+  Credito: "Crédito",
+  Estorno: "Estorno",
+};
+
+interface TransacaoTipoBadgeProps {
+  tipo: TipoTransacao;
+  className?: string;
+}
+
+export function TransacaoTipoBadge({ tipo, className }: TransacaoTipoBadgeProps) {
+  return (
+    <span
+      className={cn(
+        "inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium whitespace-nowrap",
+        transacaoVariants[tipo],
+        className
+      )}
+    >
+      {transacaoLabels[tipo]}
     </span>
   );
 }

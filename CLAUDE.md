@@ -65,6 +65,7 @@ src/
 - `src/lib/api/membros.ts` — CRUD completo (6 endpoints)
 - `src/lib/api/cobrancas.ts` — CRUD + cancelamento (4 endpoints)
 - `src/lib/api/estabelecimento.ts` — GET + PUT perfil
+- `src/lib/api/transacoes.ts` — GET listagem + GET resumo (read-only)
 
 ## Contratos de API (OBRIGATÓRIO)
 Arquivo compartilhado: `C:\Projetos\PixRecorrente\Analise\CONTRATOS-API.md`
@@ -95,3 +96,4 @@ Template: `TEMPLATE.md` na mesma pasta.
 - **Membros:** CRUD completo integrado com API real — tabela, paginação, busca, filtros, modais (cadastro/edição/exclusão), alteração de status com transições válidas, reativação de cancelados
 - **Cobranças:** CRUD completo integrado com API real — tabela, paginação, busca, filtros, modal com dropdown searchable de membro (auto-preenche valor/vencimento), cancelamento
 - **Configurações:** formulário completo integrado com API real — dados do estabelecimento, chave Pix, plano/status readonly, loading skeleton, validação client-side, toast
+- **Transações:** extrato financeiro read-only integrado com API real — cards resumo (recebido, estornos, saldo, quantidade), tabela paginada, filtro por tipo, badges coloridos

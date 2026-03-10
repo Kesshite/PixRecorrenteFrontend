@@ -124,6 +124,30 @@ export interface CriarCobrancaBody {
   dataVencimento?: string;
 }
 
+// ---------- Transações ----------
+
+export type TipoTransacao = "Credito" | "Estorno";
+
+export interface Transacao {
+  id: string;
+  estabelecimentoId: string;
+  cobrancaId: string;
+  nomeMembro: string;
+  valor: number;
+  tipo: TipoTransacao;
+  idTransacaoPsp: string | null;
+  criadoEm: string;
+}
+
+export interface ResumoFinanceiro {
+  totalRecebido: number;
+  totalEstornos: number;
+  saldo: number;
+  quantidadeTransacoes: number;
+  periodoInicio: string;
+  periodoFim: string;
+}
+
 // ---------- Estabelecimento ----------
 
 export interface Estabelecimento {
